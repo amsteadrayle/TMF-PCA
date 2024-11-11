@@ -1,1 +1,3 @@
-/addons/*.pbo
+.vscode/*
+.hemttout/*
+releases

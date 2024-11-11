@@ -1,4 +1,4 @@
-name: Arma Tools Build
+name: Lint
 # Controls when the action will run. Triggers the workflow on pull request
 # events but only for the master branch
 on:
@@ -13,7 +13,7 @@ jobs:
     - name: Checkout the source code
       uses: actions/checkout@master
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
     - name: Validate SQF
       run: python3 tools/sqf_validator.py
     - name: Check config style
