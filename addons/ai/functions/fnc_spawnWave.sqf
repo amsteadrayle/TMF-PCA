@@ -18,6 +18,10 @@ private _spawnedGroups = [];
 private _spawnedUnits = [];
 private _spawnedObjects = [];
 private _data = _logic getVariable [QGVAR(waveData), []];
+
+private _disableStagger = _logic getVariable ["DisableStagger", false];
+private _staggerDelay = if (_disableStagger) then {0} else {GVAR(wavespawnStaggerSize)};
+
 _data params ['_groups', '_vehicles', '_objects'];
 {
     _x params ["_type", "_pos", "_dir", "_vectorDirAndUp", "_isSimple", "_simulationEnabled","_simpleObjData"];
@@ -62,12 +66,12 @@ _data params ['_groups', '_vehicles', '_objects'];
             missionNamespace setVariable ["hola", 123, true];
         },
         [_type, _pos, _vectorDirAndUp, _custom, _pylons, _spawnedVehicles],
-        (_forEachIndex)*GVAR(wavespawnStaggerSize)
+        (_forEachIndex)*_staggerDelay
     ] call CBA_fnc_execAfterNFrames;
 
 } forEach _vehicles;
 
-private _vehicleDelay = (count _vehicles)*GVAR(wavespawnStaggerSize); // Groups have to be spawned after all vehicles to avoid race conditions
+private _vehicleDelay = (count _vehicles)*_staggerDelay; // Groups have to be spawned after all vehicles to avoid race conditions
 
 {
     _x params ['_side', '_units', '_waypoints'];
@@ -131,12 +135,12 @@ private _vehicleDelay = (count _vehicles)*GVAR(wavespawnStaggerSize); // Groups 
             _spawnedGroups pushBack _grp;
         },
         [_side, _units, _waypoints, _spawnedVehicles, _spawnedUnits, _spawnedGroups],
-        _vehicleDelay + (_forEachIndex)*GVAR(wavespawnStaggerSize)
+        _vehicleDelay + (_forEachIndex)*_staggerDelay
     ] call CBA_fnc_execAfterNFrames;
 
 } forEach _groups;
 
-private _totalDelay = _vehicleDelay + (count _groups)*GVAR(wavespawnStaggerSize);
+private _totalDelay = _vehicleDelay + (count _groups)*_staggerDelay;
 
 [
     {
