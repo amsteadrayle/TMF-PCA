@@ -38,25 +38,36 @@ _data params ['_groups', '_vehicles', '_objects'];
 
 {
     _x params ['_type','_pos','_vectorDirAndUp','_custom', '_pylons'];
-    private _formationType = "NONE";
-    if((_pos select 2) > 3) then {_formationType = "FLY"};
-    private _vehicle = createVehicle [_type, [0,0,0], [], 0, _formationType];
-    _vehicle setPosATL _pos;
-    _vehicle setVectorDirAndUp _vectorDirAndUp;
-    [_vehicle,_custom select 0,_custom select 1] spawn BIS_fnc_initVehicle;
 
-    if(count _pylons > 0) then {
-        private _pylonPaths = (configProperties [configFile >> "CfgVehicles" >> typeOf _vehicle >> "Components" >> "TransportPylonsComponent" >> "Pylons", "isClass _x"]) apply {getArray (_x >> "turret")};
+    [
         {
-            _vehicle removeWeaponGlobal getText (configFile >> "CfgMagazines" >> _x >> "pylonWeapon")
-        } forEach getPylonMagazines _vehicle;
-        {
-            _vehicle setPylonLoadout [_forEachIndex + 1, _x, true, _pylonPaths select _forEachIndex]
-        } forEach _pylons;
-    };
-    _spawnedVehicles pushBack _vehicle;
+            _this params ['_type','_pos','_vectorDirAndUp','_custom', '_pylons', '_spawnedVehicles'];
+            private _formationType = "NONE";
+            if((_pos select 2) > 3) then {_formationType = "FLY"};
+            private _vehicle = createVehicle [_type, [0,0,0], [], 0, _formationType];
+            _vehicle setPosATL _pos;
+            _vehicle setVectorDirAndUp _vectorDirAndUp;
+            [_vehicle,_custom select 0,_custom select 1] spawn BIS_fnc_initVehicle;
+
+            if(count _pylons > 0) then {
+                private _pylonPaths = (configProperties [configFile >> "CfgVehicles" >> typeOf _vehicle >> "Components" >> "TransportPylonsComponent" >> "Pylons", "isClass _x"]) apply {getArray (_x >> "turret")};
+                {
+                    _vehicle removeWeaponGlobal getText (configFile >> "CfgMagazines" >> _x >> "pylonWeapon")
+                } forEach getPylonMagazines _vehicle;
+                {
+                    _vehicle setPylonLoadout [_forEachIndex + 1, _x, true, _pylonPaths select _forEachIndex]
+                } forEach _pylons;
+            };
+            _spawnedVehicles pushBack _vehicle;
+            missionNamespace setVariable ["hola", 123, true];
+        },
+        [_type, _pos, _vectorDirAndUp, _custom, _pylons, _spawnedVehicles],
+        (_forEachIndex)*GVAR(wavespawnStaggerSize)
+    ] call CBA_fnc_execAfterNFrames;
 
 } forEach _vehicles;
+
+private _vehicleDelay = (count _vehicles)*GVAR(wavespawnStaggerSize); // Groups have to be spawned after all vehicles to avoid race conditions
 
 {
     _x params ['_side', '_units', '_waypoints'];
@@ -120,12 +131,12 @@ _data params ['_groups', '_vehicles', '_objects'];
             _spawnedGroups pushBack _grp;
         },
         [_side, _units, _waypoints, _spawnedVehicles, _spawnedUnits, _spawnedGroups],
-        (_forEachIndex+1)*GVAR(wavespawnStaggerSize)
+        _vehicleDelay + (_forEachIndex)*GVAR(wavespawnStaggerSize)
     ] call CBA_fnc_execAfterNFrames;
 
 } forEach _groups;
 
-private _totalDelay = (count _groups)*GVAR(wavespawnStaggerSize);
+private _totalDelay = _vehicleDelay + (count _groups)*GVAR(wavespawnStaggerSize);
 
 [
     {
